@@ -14,3 +14,29 @@ modify lms to drive support
 CF D1 for database
 server-less
 certification
+
+SELECT 
+    subquery.userId,
+    SUM(total_completed_chapters) AS total_completed_chapters,
+    SUM(total_chapters_in_course) AS total_chapters_in_courses,
+    SUM(CASE WHEN total_completed_chapters = total_chapters_in_course THEN 1 ELSE 0 END) AS course_completed
+FROM (
+    SELECT 
+        up.userId,
+        c.id AS course_id,
+        COUNT(DISTINCT CASE WHEN up.isCompleted = 1 THEN up.chapterId END) AS total_completed_chapters,
+        (SELECT COUNT(DISTINCT ch.id) FROM chapter ch WHERE ch.courseId = c.id) AS total_chapters_in_course
+    FROM 
+        userprogress up
+    JOIN 
+        chapter ch ON up.chapterId = ch.id
+    JOIN
+        course c ON ch.courseId = c.id
+    GROUP BY 
+        up.userId, c.id
+) AS subquery
+GROUP BY 
+    subquery.userId;
+
+
+SELECT userid, COUNT(userid) AS total_count FROM userprogress WHERE isCompleted=1 GROUP BY userid HAVING total_count > 0;

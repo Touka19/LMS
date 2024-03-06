@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { Course, Purchase } from "@prisma/client";
+import { Course, Purchase, Chapter } from "@prisma/client";
 
 type PurchaseWithCourse = Purchase & {
   course: Course;
@@ -21,6 +21,7 @@ const groupByCourse = (purchases: PurchaseWithCourse[]) => {
 
 export const getAnalytics = async (userId: string) => {
   try {
+    // Fetch purchases with associated courses
     const purchases = await db.purchase.findMany({
       where: {
         course: {
@@ -32,6 +33,37 @@ export const getAnalytics = async (userId: string) => {
       }
     });
 
+    // Fetch chapters associated with the purchased courses
+    const coursesIds = purchases.map(purchase => purchase.course.id);
+    const chapters = await db.chapter.findMany({
+      where: {
+        courseId: {
+          in: coursesIds
+        },
+        isPublished: true // Assuming this indicates a completed chapter
+      }
+    });
+
+    // Initialize object to store completed chapters count by course
+    const completedChaptersByCourse: { [courseId: string]: number } = {};
+
+    // Count completed chapters for each course
+    chapters.forEach(chapter => {
+      const courseId = chapter.courseId;
+      completedChaptersByCourse[courseId] = (completedChaptersByCourse[courseId] || 0) + 1;
+    });
+
+    // Calculate total completed chapters for all courses
+    const totalCompletedChapters = Object.values(completedChaptersByCourse).reduce((acc, curr) => acc + curr, 0);
+
+    // Count completed courses for the user
+    const completedCourses: { [courseId: string]: boolean } = {};
+    purchases.forEach(purchase => {
+      completedCourses[purchase.courseId] = true;
+    });
+    const totalCompletedCourses = Object.keys(completedCourses).length;
+
+    // Proceed with the existing logic to calculate total revenue and sales
     const groupedEarnings = groupByCourse(purchases);
     const data = Object.entries(groupedEarnings).map(([courseTitle, total]) => ({
       name: courseTitle,
@@ -45,6 +77,8 @@ export const getAnalytics = async (userId: string) => {
       data,
       totalRevenue,
       totalSales,
+      totalCompletedChapters,
+      totalCompletedCourses,
     }
   } catch (error) {
     console.log("[GET_ANALYTICS]", error);
@@ -52,6 +86,8 @@ export const getAnalytics = async (userId: string) => {
       data: [],
       totalRevenue: 0,
       totalSales: 0,
+      totalCompletedChapters: 0,
+      totalCompletedCourses: 0,
     }
   }
 }
