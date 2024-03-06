@@ -1,0 +1,16 @@
+stripe listen --forward-to localhost:3000/api/webhook
+
+
+teacher>LMS<student
+payment
+user-progress
+chapter & cousre create using uploadthing, mux api
+
+
+TOdo:
+use bhadoo for drive api
+categories based on root folder to save in database
+modify lms to drive support
+CF D1 for database
+server-less
+certification
