@@ -22,7 +22,7 @@ export const getLeaderboard = async (): Promise<LeaderboardEntry[]> => {
           up.userId,
           c.id AS course_id,
           COUNT(DISTINCT CASE WHEN up.isCompleted = 1 THEN up.chapterId END) AS total_completed_chapters,
-          (SELECT COUNT(DISTINCT ch.id) FROM chapter ch WHERE ch.courseId = c.id) AS total_chapters_in_course
+          (SELECT COUNT(DISTINCT ch.id) FROM Chapter ch WHERE ch.courseId = c.id) AS total_chapters_in_course
         FROM 
           UserProgress up
         JOIN 
