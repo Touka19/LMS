@@ -1,7 +1,6 @@
 "use client";
 
 import axios from "axios";
-import MuxPlayer from "@mux/mux-player-react";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -11,17 +10,17 @@ import { cn } from "@/lib/utils";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
 
 interface VideoPlayerProps {
-  playbackId: string;
+  videoUrl: string;
   courseId: string;
   chapterId: string;
   nextChapterId?: string;
   isLocked: boolean;
   completeOnEnd: boolean;
   title: string;
-};
+}
 
 export const VideoPlayer = ({
-  playbackId,
+  videoUrl,
   courseId,
   chapterId,
   nextChapterId,
@@ -32,7 +31,7 @@ export const VideoPlayer = ({
   const [isReady, setIsReady] = useState(false);
   const router = useRouter();
   const confetti = useConfettiStore();
-
+  
   const onEnd = async () => {
     try {
       if (completeOnEnd) {
@@ -66,23 +65,21 @@ export const VideoPlayer = ({
       {isLocked && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-800 flex-col gap-y-2 text-secondary">
           <Lock className="h-8 w-8" />
-          <p className="text-sm">
-            This chapter is locked
-          </p>
+          <p className="text-sm">This chapter is locked</p>
         </div>
       )}
       {!isLocked && (
-        <MuxPlayer
-          title={title}
-          className={cn(
-            !isReady && "hidden"
-          )}
+        <video
+          controls
+          className={isReady ? "" : "hidden"}
           onCanPlay={() => setIsReady(true)}
           onEnded={onEnd}
           autoPlay
-          playbackId={playbackId}
-        />
+        >
+          <source src={videoUrl} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
       )}
     </div>
-  )
-}
+  );
+};

@@ -65,7 +65,7 @@ const ChapterIdPage = async ({
             title={chapter.title}
             courseId={params.courseId}
             nextChapterId={nextChapter?.id}
-            playbackId={muxData?.playbackId!}
+            videoUrl={chapter.videoUrl || ''} // Provide a default value if videoUrl is null
             isLocked={isLocked}
             completeOnEnd={completeOnEnd}
           />
