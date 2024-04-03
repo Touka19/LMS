@@ -10,7 +10,7 @@ type CourseWithProgressWithCategory = Course & {
 };
 
 type GetCourses = {
-  userId: string;
+  userId?: string;
   title?: string;
   categoryId?: string;
 };
@@ -18,7 +18,7 @@ type GetCourses = {
 export const getCourses = async ({
   userId,
   title,
-  categoryId
+  categoryId,
 }: GetCourses): Promise<CourseWithProgressWithCategory[]> => {
   try {
     const courses = await db.course.findMany({
@@ -37,40 +37,47 @@ export const getCourses = async ({
           },
           select: {
             id: true,
-          }
+          },
         },
-        purchases: {
-          where: {
-            userId,
-          }
-        }
+        ...(userId && {
+          purchases: {
+            where: {
+              userId,
+            },
+          },
+        }),
       },
       orderBy: {
         createdAt: "desc",
-      }
+      },
     });
 
-    const coursesWithProgress: CourseWithProgressWithCategory[] = await Promise.all(
-      courses.map(async course => {
-        if (course.purchases.length === 0) {
+    // only do this if userId is defined
+    const coursesWithProgress: CourseWithProgressWithCategory[] =
+      await Promise.all(
+        courses.map(async (course) => {
+          if (!course.purchases || course.purchases.length === 0) {
+            return {
+              ...course,
+              progress: null,
+            };
+          }
+
+          let progressPercentage = 0;
+
+          if (userId) {
+            progressPercentage = await getProgress(course.id, userId);
+          }
           return {
             ...course,
-            progress: null,
-          }
-        }
-
-        const progressPercentage = await getProgress(userId, course.id);
-
-        return {
-          ...course,
-          progress: progressPercentage,
-        };
-      })
-    );
+            progress: progressPercentage,
+          };
+        })
+      );
 
     return coursesWithProgress;
   } catch (error) {
     console.log("[GET_COURSES]", error);
     return [];
   }
-}
+};
